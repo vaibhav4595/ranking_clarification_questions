@@ -19,6 +19,10 @@ class VocabEntry(object):
         self.word2id['<<!SEP!>>'] = 1
         self.word2id['<<!UNK!>>'] = 2
 
+        self.pad_tok = '<<!PAD!>>'
+        self.sep_tok = '<<!SEP!>>'
+        self.unk_tok = '<<!UNK!>>'
+
         # Hardcode the embedding size as 200, to obey the paper
         self.word2vec[0] = np.zeros((200, ))
         self.word2vec[1] = np.random.random((200, ))
@@ -75,6 +79,19 @@ class VocabEntry(object):
         else:
             return [self[w] for w in sents]
 
+    def words2vectors(self, sents):
+        if type(sents[0]) == list:
+            return [[self.word2vec[self[w]] for w in s] for s in sents]
+        else:
+            return [self.word2vec[self[w]] for w in sents]
+
+    def sentence2vector(self, sents):
+        vectors = self.words2vectors(sents)
+        if type(vectors[0]) == list:
+            return [np.sum(vector, axis=0) / len(vector) for vector in vectors]
+        else:
+            return np.sum(vectors, axis=0) / len(vectors)
+        
     def from_corpus(self, input_file):
 
         fp = open(args.input_file)
@@ -85,13 +102,20 @@ class VocabEntry(object):
             vec = np.fromstring(vec, sep=' ') 
             self.add(word, vec)
 
+def test_vocab(vocab):
+
+
+    assert vocab.unk_id == 2
+    assert vocab.words2indices([vocab.pad_tok, vocab.pad_tok]) == [0, 0]
+    assert vocab.words2indices([[vocab.pad_tok], [vocab.pad_tok]]) == [[0], [0]]
+    assert (vocab.sentence2vector([[vocab.pad_tok], [vocab.pad_tok]])[0] == np.zeros((200, ))).all()
+
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--input_file', default='vocab.txt',\
         help="Processed File containing a word in each line")
-    #parser.add_argument('--vocab_size', type=int, default=70000)
     parser.add_argument('--save_name', default='vocab.pkl')
 
     args = parser.parse_args()
@@ -105,3 +129,5 @@ if __name__ == '__main__':
     fp = open(args.save_name, 'wb')
     pickle.dump(vocab, fp)
     fp.close()
+
+    test_vocab(vocab)
