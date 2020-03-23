@@ -91,7 +91,15 @@ class VocabEntry(object):
             return [np.sum(vector, axis=0) / len(vector) for vector in vectors]
         else:
             return np.sum(vectors, axis=0) / len(vectors)
-        
+
+    def id2vector(self, sents):
+        if type(sents[0]) == list:
+            vectors = [[self.word2vec[w] for w in s] for s in sents]
+            return [np.sum(vector, axis=0) / len(vector) for vector in vectors]
+        else:
+            vector = [self.word2vec[w] for w in sents]
+            return np.sum(vector, axis=0) / len(vector)
+
     def from_corpus(self, input_file):
 
         fp = open(args.input_file)
@@ -109,6 +117,7 @@ def test_vocab(vocab):
     assert vocab.words2indices([vocab.pad_tok, vocab.pad_tok]) == [0, 0]
     assert vocab.words2indices([[vocab.pad_tok], [vocab.pad_tok]]) == [[0], [0]]
     assert (vocab.sentence2vector([[vocab.pad_tok], [vocab.pad_tok]])[0] == np.zeros((200, ))).all()
+    assert (vocab.id2vector([[vocab.pad_id], [vocab.pad_id]])[0] == np.zeros((200, ))).all()
 
 if __name__ == '__main__':
 
