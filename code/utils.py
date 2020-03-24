@@ -102,6 +102,8 @@ def batch_iter(ids, post_content, qa_dict, vocab, batch_size, shuffle=False):
             question_words.append(vocab.words2indices(question))
             answer_words.append(vocab.words2indices(answer))
 
+    print("Total examples = ", len(example_ids))
+
     batch_num = math.ceil(len(example_ids) / batch_size)
     index_array = list(range(len(example_ids)))
 
