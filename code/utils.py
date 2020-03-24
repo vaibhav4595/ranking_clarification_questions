@@ -3,6 +3,7 @@ import sys
 import math
 import random
 import pickle
+import torch
 from build_vocab import VocabEntry
 from pdb import set_trace as bp
 
@@ -115,3 +116,19 @@ def batch_iter(ids, post_content, qa_dict, vocab, batch_size, shuffle=False):
 
         yield batch_ids, batch_posts, batch_questions, batch_answers, batch_labels
 
+def pad_sequence(device, lister):
+
+    input_pads = []
+    max_length = 0
+    for each in lister:
+        list_len = len(each)
+        max_length = max(max_length, list_len)
+        pads = [1 for _ in range(list_len)]
+        input_pads.append(pads)
+
+    for i in range(len(lister)):
+        pad_len = max_length - len(lister[i])
+        lister[i] = lister[i] + [0] * pad_len
+        input_pads[i] = input_pads[i] + [0] * pad_len
+
+    return torch.tensor(lister).to(device=device), torch.tensor(input_pads).to(device=device)
