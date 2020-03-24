@@ -35,8 +35,10 @@ class EVPI(torch.nn.Module):
 
         self.answer_linear = torch.nn.ModuleList(answer_linear)
         self.util_linear = torch.nn.ModuleList(util_linear)
+        self.class_layer = torch.nn.Linear(self.args.feedforward_hidden, 2)
 
         self.relu = torch.nn.ReLU()
+
         self.dropout = torch.nn.Dropout(p=args.dropout)
 
     def load_vector(self, args, vocab):
@@ -103,6 +105,7 @@ class EVPI(torch.nn.Module):
         for i in range(self.args.linear_layers):
             pqa_vector = self.dropout(pqa_vector)
             pqa_vector = self.relu(self.util_linear[i](pqa_vector))
+        pqa_probs = self.class_layer(pqa_vector)
 
         selection_idx = []
         for i, idx in enumerate(ids):
@@ -120,4 +123,4 @@ class EVPI(torch.nn.Module):
             pq_vector = self.dropout(pq_vector)
             pq_vector = self.relu(self.answer_linear[i](pq_vector))
 
-        return pq_vector, pqa_vector
+        return pq_vector, pqa_probs
