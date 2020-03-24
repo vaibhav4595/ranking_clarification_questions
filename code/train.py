@@ -123,7 +123,7 @@ def train():
             optim.step()
 
             if train_iter % log_every == 0:
-                print('epoch %d, iter %d, avg.loss %.6f, util.loss %.6f, answer.loss %.6ftime elapsed %.2f'\
+                print('epoch %d, iter %d, avg.loss %.6f, util.loss %.6f, answer.loss %.6f time elapsed %.2f'\
                      % (ep + 1, train_iter, avg_loss / log_every, avg_util_loss / log_every, avg_answer_loss / log_every, time.time() - begin_time), file=sys.stderr)
 
                 begin_time = time.time()
@@ -304,8 +304,8 @@ if __name__ == '__main__':
     parser.add_argument('--bidirectional', type=int, default=0)
     parser.add_argument('--linear_layers', type=int, default=1)
     parser.add_argument('--batch_size', type=int, default=120)
-    parser.add_argument('--max_epochs', type=int, default=20)
-    parser.add_argument('--valid_iter', type=int, default=100)
+    parser.add_argument('--max_epochs', type=int, default=50)
+    parser.add_argument('--valid_iter', type=int, default=2500)
     parser.add_argument('--log_every', type=int, default=100)
     parser.add_argument("--lr", type=float, default=0.001)
     parser.add_argument("--lr_decay", type=float, default=0.25)
