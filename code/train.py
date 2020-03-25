@@ -47,6 +47,7 @@ def train():
 
     cosine_function = torch.nn.functional.cosine_similarity
 
+    model_counter = 0
     for ep in range(args.max_epochs):
 
         train_iter = 0
@@ -156,7 +157,8 @@ def train():
                     patience = 0
                     print("Save the current model and optimiser state")
                     torch.save(model, args.model_save_path)
-
+                    #torch.save(model, args.model_save_path + '.' + str(model_counter))
+                    #model_counter += 1
                     torch.save(optim.state_dict(), args.model_save_path + '.optim')
 
                 elif patience < args.patience:
@@ -302,7 +304,7 @@ if __name__ == '__main__':
     parser.add_argument('--lstm_hidden_size', type=int, default=200)
     parser.add_argument('--feedforward_hidden', type=int, default=200)
     parser.add_argument('--bidirectional', type=int, default=0)
-    parser.add_argument('--linear_layers', type=int, default=1)
+    parser.add_argument('--linear_layers', type=int, default=5)
     parser.add_argument('--batch_size', type=int, default=120)
     parser.add_argument('--max_epochs', type=int, default=50)
     parser.add_argument('--valid_iter', type=int, default=2500)
