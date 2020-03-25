@@ -134,3 +134,19 @@ def pad_sequence(device, lister):
         input_pads[i] = input_pads[i] + [0] * pad_len
 
     return torch.tensor(lister).to(device=device), torch.tensor(input_pads).to(device=device)
+
+def get_test_ranking(base_type, filepath, test_dict):
+
+    lines = open(filepath).readlines()
+    lines = [line.strip().split('\t') for line in lines]
+    for each in lines:
+        annot1 = each[0].split(',')
+        annot2 = each[1].split(',')
+        idx = base_type + '_' + annot1[1]
+        best_ques = set([int(annot1[2]), int(annot2[2])])
+        valid1 = set([int(idx) for idx in annot1[3].split()])
+        valid2 = set([int(idx) for idx in annot2[3].split()])
+        valid_ques = valid1 & valid2
+        test_dict[idx] = {}
+        test_dict[idx]['best'] = best_ques
+        test_dict[idx]['valid'] = valid_ques
