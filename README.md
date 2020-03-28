@@ -19,5 +19,5 @@ In your report, also perform an analysis of what remaining errors this model mak
 
 2. Download Data: ``` wget https://www.dropbox.com/s/8uaqm1ymrh50yxf/clarification_questions_dataset.zip ```, ```unzip clarification_questions_dataset.zip```
 
-3. Train: ``` python -u train.py --data_path ../../clarification_questions_dataset/data --model_save_path ../models/evpi/model.pk --vocab_file ../../clarification_questions_dataset/aux/vocab.pkl ```
+3. Train: ``` bash code/train.sh ```
 
