@@ -8,7 +8,8 @@ In your report, also perform an analysis of what remaining errors this model mak
 
 ### Steps
 
-- [ ] Data Loading
-- [ ] Model
+- [x] Data Loading
+- [x] Model
+- [x] Integration
 - [ ] Experiments
 
