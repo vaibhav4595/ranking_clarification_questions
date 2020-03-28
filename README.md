@@ -6,10 +6,18 @@ Checkpoint 2 will involve reproducing the evaluation numbers of a state-of-the-a
 In your report, also perform an analysis of what remaining errors this model makes (ideally with concrete examples of failure cases), and describe how you plan to create a new model for the final project that will address these error cases. If you are interested in tackling a task that does not have a neural baseline in the final project, you may also describe how you adopted the existing model to this new task and perform your error analysis on the new task (although you must report results on the task that the state-of-the-art model was originally designed for).
 
 
-### Steps
+### Implementation Steps
 
 - [x] Data Loading
 - [x] Model
 - [x] Integration
 - [ ] Experiments
+
+### Replication Steps
+
+1. Clone the Repository, Create the Environment: ``` conda env create -f environment.yml ```
+
+2. Download Data: ``` wget https://www.dropbox.com/s/8uaqm1ymrh50yxf/clarification_questions_dataset.zip ```, ```unzip clarification_questions_dataset.zip```
+
+3. Train: ``` python -u train.py --data_path ../../clarification_questions_dataset/data --model_save_path ../models/evpi/model.pk --vocab_file ../../clarification_questions_dataset/aux/vocab.pkl ```
 
