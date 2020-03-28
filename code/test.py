@@ -5,7 +5,7 @@ import numpy as np
 import torch
 import argparse
 import time
-from prev_model import EVPI
+from model import EVPI
 from build_vocab import VocabEntry
 from utils import *
 from pdb import set_trace as bp

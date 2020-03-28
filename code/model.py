@@ -113,6 +113,7 @@ class EVPI(torch.nn.Module):
         answer_vector = answer_hiddens.sum(dim=1) / answer_lengths.unsqueeze(1)
 
         new_post_vector = torch.repeat_interleave(post_vector, 10, dim=0)
+        # bp()  --> Keep batch sizes in multiples of 10
         pqa_vector = torch.cat([new_post_vector, question_vector, answer_vector], dim=1)
         for i in range(self.args.linear_layers):
             pqa_vector = self.dropout(pqa_vector)
