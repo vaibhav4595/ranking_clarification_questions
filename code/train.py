@@ -305,7 +305,7 @@ if __name__ == '__main__':
     parser.add_argument('--feedforward_hidden', type=int, default=200)
     parser.add_argument('--bidirectional', type=int, default=0)
     parser.add_argument('--linear_layers', type=int, default=5)
-    parser.add_argument('--batch_size', type=int, default=510)
+    parser.add_argument('--batch_size', type=int, default=2040)
     parser.add_argument('--max_epochs', type=int, default=5)
     parser.add_argument('--valid_iter', type=int, default=2500)
     parser.add_argument('--log_every', type=int, default=100)
