@@ -19,5 +19,5 @@ In your report, also perform an analysis of what remaining errors this model mak
 
 2. Download Data: ``` wget https://www.dropbox.com/s/8uaqm1ymrh50yxf/clarification_questions_dataset.zip ```, ```unzip clarification_questions_dataset.zip```
 
-3. Train & Test: ``` bash run.sh experiment_name```
+3. For Each Model Directory, Run Train & Test: ``` bash run.sh experiment_name```
 
