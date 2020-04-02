@@ -11,7 +11,8 @@ In your report, also perform an analysis of what remaining errors this model mak
 - [x] Data Loading
 - [x] Model
 - [x] Integration
-- [ ] Experiments
+- [x] Experiments
+- [ ] Error Analysis
 
 ### Replication Steps
 
