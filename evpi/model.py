@@ -71,14 +71,14 @@ class EVPI(torch.nn.Module):
             if idx.endswith('1'):
                 selection_idx.append(i)
 
-        selection_idx = torch.tensor(selection_idx).to(device=self.args.device)
-        post_ids = torch.index_select(post_ids, dim=0, index=selection_idx)
+        post_ids = post_ids[selection_idx, ]
+        post_pad_idx = post_pad_idx[selection_idx, ]
 
         post_embed = self.embedding(post_ids)
         question_embed = self.embedding(question_ids)
         answer_embed = self.embedding(answer_ids)
 
-        post_lengths = torch.index_select(post_pad_idx.sum(dim=1), dim=0, index=selection_idx)
+        post_lengths = post_pad_idx.sum(dim=1)
         question_lengths = question_pad_idx.sum(dim=1)
         answer_lengths = answer_pad_idx.sum(dim=1)
 
@@ -113,7 +113,6 @@ class EVPI(torch.nn.Module):
         answer_vector = answer_hiddens.sum(dim=1) / answer_lengths.unsqueeze(1)
 
         new_post_vector = torch.repeat_interleave(post_vector, 10, dim=0)
-        # bp()  --> Keep batch sizes in multiples of 10
         pqa_vector = torch.cat([new_post_vector, question_vector, answer_vector], dim=1)
         for i in range(self.args.linear_layers):
             pqa_vector = self.dropout(pqa_vector)
@@ -125,10 +124,11 @@ class EVPI(torch.nn.Module):
         #    if idx.endswith('1'):
         #        selection_idx.append(i)
 
-        selection_idx = torch.tensor(selection_idx).to(device=self.args.device)
+        #selection_idx = torch.tensor(selection_idx).to(device=self.args.device)
         # p(qi | p)
         # select the qi and p
-        former_q_evpi = torch.index_select(question_vector, dim=0, index=selection_idx)
+        former_q_evpi = question_vector[selection_idx,]
+        #former_q_evpi = torch.index_select(question_vector, dim=0, index=selection_idx)
         #latter_p_evpi = torch.index_select(post_vector, dim=0, index=selection_idx)
 
         #pq_vector = torch.cat([former_q_evpi, latter_p_evpi], dim=1)
