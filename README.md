@@ -12,7 +12,7 @@ In your report, also perform an analysis of what remaining errors this model mak
 - [x] Model
 - [x] Integration
 - [x] Experiments
-- [ ] Error Analysis
+- [x] Error Analysis
 
 ### Replication Steps
 
