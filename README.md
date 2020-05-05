@@ -18,7 +18,9 @@ In your report, also perform an analysis of what remaining errors this model mak
 
 1. Clone the Repository, Create the Environment: ``` conda env create -f environment.yml ```
 
-2. Download Data: ``` wget https://www.dropbox.com/s/8uaqm1ymrh50yxf/clarification_questions_dataset.zip ```, ```unzip clarification_questions_dataset.zip```
+2. Download Data (outside the repository): ``` wget https://www.dropbox.com/s/8uaqm1ymrh50yxf/clarification_questions_dataset.zip ```, ```unzip clarification_questions_dataset.zip```
+
+3. Create a directory to store models: ```mkdir trained_models```
 
 3. For Each Model Directory, Run Train & Test: ``` bash run.sh experiment_name```
 
