@@ -10,6 +10,9 @@ from build_vocab import VocabEntry
 from utils import *
 from pdb import set_trace as bp
 from focal_loss import FocalLoss
+from sentence_transformers import SentenceTransformer
+
+sentence_bert_model = SentenceTransformer('bert-base-nli-mean-tokens')
 
 def train():
 
@@ -37,14 +40,13 @@ def train():
 
     print("Placing model on ", args.device)
     if args.device == 'cuda':
-       model.cuda()
+       model = model.cuda()
 
     lr = args.lr
     optim = torch.optim.Adam(list(model.parameters()), lr=lr)
 
     # The loss functions
-    #criterion = torch.nn.CrossEntropyLoss().to(device=device)
-    criterion = FocalLoss(gamma=5).to(device=device)
+    criterion = torch.nn.CrossEntropyLoss().to(device=device)
 
     print("Beginning Training")
     model.train()
@@ -53,32 +55,46 @@ def train():
 
     model_counter = 0
     train_iter = 0
+
     for ep in range(args.max_epochs):
 
         val_iter = 0
 
         count = 0
         hello = set()
+
         for ids, posts, questions, answers, labels in batch_iter(train_ids, \
                             post_content, qa_dict, vocab, args.batch_size, shuffle=False):
 
             train_iter += 1
+            #print(train_iter)
 
             optim.zero_grad()
 
-            question_vectors = vocab.id2vector(questions)
-            post_vectors = vocab.id2vector(posts)
-            answer_vectors = vocab.id2vector(answers)
+            #question_vectors = vocab.id2vector(questions)
+            #post_vectors = vocab.id2vector(posts)
+            #answer_vectors = vocab.id2vector(answers)
 
-            padded_posts, post_pad_idx = pad_sequence(args.device, posts)
-            padded_questions, question_pad_idx = pad_sequence(args.device, questions)
-            padded_answers, answer_pad_idx = pad_sequence(args.device, answers)
+            #padded_posts, post_pad_idx = pad_sequence(args.device, posts)
+            #padded_questions, question_pad_idx = pad_sequence(args.device, questions)
+            #padded_answers, answer_pad_idx = pad_sequence(args.device, answers)
 
-            pqa_probs = model(ids, (padded_posts, post_pad_idx),\
-                      (padded_questions, question_pad_idx),\
-                      (padded_answers, answer_pad_idx))
+            #posts = torch.tensor(posts).to(device=args.device)
+            #questions = torch.tensor(questions).to(device=args.device)
+            #answers = torch.tensor(answers).to(device=args.device)
 
+            posts_embeddings = np.asarray(sentence_bert_model.encode(posts))
+            questions_embeddings = np.asarray(sentence_bert_model.encode(questions))
+            answers_embeddings = np.asarray(sentence_bert_model.encode(answers))
+
+            posts_embeddings = torch.from_numpy(posts_embeddings).float().to(args.device)
+            questions_embeddings = torch.from_numpy(questions_embeddings).float().to(args.device)
+            answers_embeddings = torch.from_numpy(answers_embeddings).float().to(args.device)
+
+            pqa_probs = model(posts_embeddings, questions_embeddings, answers_embeddings)
             labels = torch.tensor(labels).to(device=args.device)
+
+            #bp()
             total_loss = criterion(pqa_probs, labels)
 
             #bp()
@@ -177,17 +193,25 @@ def get_val_loss(vocab, args, model):
        
         util_examples += len(ids)
 
-        question_vectors = vocab.id2vector(questions)
-        post_vectors = vocab.id2vector(posts)
-        answer_vectors = vocab.id2vector(answers)
+        #question_vectors = vocab.id2vector(questions)
+        #post_vectors = vocab.id2vector(posts)
+        #answer_vectors = vocab.id2vector(answers)
 
-        padded_posts, post_pad_idx = pad_sequence(args.device, posts)
-        padded_questions, question_pad_idx = pad_sequence(args.device, questions)
-        padded_answers, answer_pad_idx = pad_sequence(args.device, answers)
+        #padded_posts, post_pad_idx = pad_sequence(args.device, posts)
+        #padded_questions, question_pad_idx = pad_sequence(args.device, questions)
+        #padded_answers, answer_pad_idx = pad_sequence(args.device, answers)
 
-        pqa_probs = model(ids, (padded_posts, post_pad_idx),\
-                  (padded_questions, question_pad_idx),\
-                  (padded_answers, answer_pad_idx))
+        posts_embeddings = np.asarray(sentence_bert_model.encode(posts))
+        questions_embeddings = np.asarray(sentence_bert_model.encode(questions))
+        answers_embeddings = np.asarray(sentence_bert_model.encode(answers))
+
+        posts_embeddings = torch.from_numpy(posts_embeddings).float().to(args.device)
+        questions_embeddings = torch.from_numpy(questions_embeddings).float().to(args.device)
+        answers_embeddings = torch.from_numpy(answers_embeddings).float().to(args.device)
+
+        pqa_probs = model(posts_embeddings, questions_embeddings, answers_embeddings)
+
+        #pqa_probs = model(ids, posts, questions, answers)
 
         labels = torch.tensor(labels).to(device=args.device)
         util_loss = criterion(pqa_probs, labels)
@@ -226,7 +250,7 @@ if __name__ == '__main__':
     parser.add_argument('--lstm_hidden_size', type=int, default=200)
     parser.add_argument('--feedforward_hidden', type=int, default=200)
     parser.add_argument('--bidirectional', type=int, default=0)
-    parser.add_argument('--linear_layers', type=int, default=10)
+    parser.add_argument('--linear_layers', type=int, default=1) # 10
     parser.add_argument('--batch_size', type=int, default=1000)
     parser.add_argument('--max_epochs', type=int, default=30)
     parser.add_argument('--valid_iter', type=int, default=2500)

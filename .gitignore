@@ -11,6 +11,11 @@ data/
 data/*
 models
 models/*
+trained_models/
+trained_models/*
+
+# Pickled files
+*.pickle
 
 # Distribution / packaging
 .Python

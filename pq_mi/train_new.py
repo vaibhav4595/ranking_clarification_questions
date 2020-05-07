@@ -9,7 +9,7 @@ from model import EVPI
 from build_vocab import VocabEntry
 from utils import *
 from pdb import set_trace as bp
-from focal_loss import FocalLoss
+from info_nce_loss import InfoNCELoss
 
 def train():
 
@@ -44,7 +44,8 @@ def train():
 
     # The loss functions
     #criterion = torch.nn.CrossEntropyLoss().to(device=device)
-    criterion = FocalLoss(gamma=5).to(device=device)
+    #criterion = FocalLoss()
+    criterion = InfoNCELoss().cuda()
 
     print("Beginning Training")
     model.train()
@@ -169,7 +170,8 @@ def get_val_loss(vocab, args, model):
 
     model.eval()
 
-    criterion = torch.nn.CrossEntropyLoss(reduction='sum')
+    #criterion = torch.nn.CrossEntropyLoss(reduction='sum')
+    criterion = InfoNCELoss(size_average=False).cuda()
 
     for ids, posts, questions, answers, labels in batch_iter(val_ids, \
                        post_content, qa_dict, vocab, args.batch_size, shuffle=False):
@@ -191,6 +193,8 @@ def get_val_loss(vocab, args, model):
 
         labels = torch.tensor(labels).to(device=args.device)
         util_loss = criterion(pqa_probs, labels)
+
+        #bp()
 
         total_util_loss += util_loss.item()
 
@@ -228,7 +232,7 @@ if __name__ == '__main__':
     parser.add_argument('--bidirectional', type=int, default=0)
     parser.add_argument('--linear_layers', type=int, default=10)
     parser.add_argument('--batch_size', type=int, default=1000)
-    parser.add_argument('--max_epochs', type=int, default=30)
+    parser.add_argument('--max_epochs', type=int, default=15)
     parser.add_argument('--valid_iter', type=int, default=2500)
     parser.add_argument('--log_every', type=int, default=100)
     parser.add_argument("--lr", type=float, default=0.001)
@@ -237,7 +241,7 @@ if __name__ == '__main__':
     parser.add_argument("--patience", type=int, default=5)
     parser.add_argument("--max_num_trials", type=int, default=5)
     parser.add_argument("--device", type=str, default="cuda")
-    parser.add_argument("--dropout", type=float, default=0.2)
+    parser.add_argument("--dropout", type=float, default=0.4)
     parser.add_argument("--loss_parameter", type=float, default=0.2)
     parser.add_argument("--only_last", type=int, default=0)
 

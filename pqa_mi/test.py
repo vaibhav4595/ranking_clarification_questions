@@ -49,16 +49,21 @@ def test():
         post_words, post_pads = pad_sequence(device, post_words)
 
         pqa_prob = model(send_ids, (post_words, post_pads), (q_words, q_pads), (ans_words, ans_pads))
+        result = pqa_prob
 
         #bp()
 
-        result = softmax(pqa_prob)
-        result = result[:, 1]
+        # result = softmax(pqa_prob)
+        # This step is now not needed, also softmax is not needed, but I am keeping it
+        # result = result[:, 1]
 
         evpi_scores = []
+
         for i, each in enumerate(result):
             evpi_scores.append((each.item(), i))
-        
+
+        print(evpi_scores)
+
         ranked_list = sorted(evpi_scores, key=lambda x:x[0], reverse=True)
         ranked_list = [each[1] for each in ranked_list]
 

@@ -9,7 +9,9 @@ from model import EVPI
 from build_vocab import VocabEntry
 from utils import *
 from pdb import set_trace as bp
+from sentence_transformers import SentenceTransformer
 
+sentence_bert_model = SentenceTransformer('bert-base-nli-mean-tokens')
 
 def test():
 
@@ -35,6 +37,20 @@ def test():
         q_candidate = qa_data[idx][0]
         ans_candidate = qa_data[idx][1]
 
+        #print(post, q_candidate, ans_candidate)
+
+        p = [ " ".join([x for x in post ]) for _ in range(10)]
+        q = [ " ".join([x for x in qc ]) for qc in q_candidate]
+        a = [ " ".join([x for x in ac ]) for ac in ans_candidate]
+
+        posts_embeddings = np.asarray(sentence_bert_model.encode(p))
+        questions_embeddings = np.asarray(sentence_bert_model.encode(q))
+        answers_embeddings = np.asarray(sentence_bert_model.encode(a))
+
+        posts_embeddings = torch.from_numpy(posts_embeddings).float().to('cuda')
+        questions_embeddings = torch.from_numpy(questions_embeddings).float().to('cuda')
+        answers_embeddings = torch.from_numpy(answers_embeddings).float().to('cuda')
+
         send_ids = [idx + '_' + str(i + 1) for i in range(10)]
 
         expanded_posts = [[each for each in post] for _ in range(10)]
@@ -48,14 +64,19 @@ def test():
         post_words = vocab.words2indices(expanded_posts)
         post_words, post_pads = pad_sequence(device, post_words)
 
-        pqa_prob = model(send_ids, (post_words, post_pads), (q_words, q_pads), (ans_words, ans_pads))
+        #bp()
+
+        pqa_prob = model(posts_embeddings, questions_embeddings, answers_embeddings)
+        result = pqa_prob
 
         #bp()
 
-        result = softmax(pqa_prob)
-        result = result[:, 1]
+        # Result
+        #result = softmax(pqa_prob)
+        #result = result[:, 1]
 
         evpi_scores = []
+
         for i, each in enumerate(result):
             evpi_scores.append((each.item(), i))
         

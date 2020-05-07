@@ -9,7 +9,7 @@ from model import EVPI
 from build_vocab import VocabEntry
 from utils import *
 from pdb import set_trace as bp
-from focal_loss import FocalLoss
+from info_nce_loss import InfoNCELoss
 
 def train():
 
@@ -44,7 +44,8 @@ def train():
 
     # The loss functions
     #criterion = torch.nn.CrossEntropyLoss().to(device=device)
-    criterion = FocalLoss(gamma=5).to(device=device)
+    #criterion = FocalLoss()
+    criterion = InfoNCELoss().cuda()
 
     print("Beginning Training")
     model.train()
@@ -169,7 +170,8 @@ def get_val_loss(vocab, args, model):
 
     model.eval()
 
-    criterion = torch.nn.CrossEntropyLoss(reduction='sum')
+    #criterion = torch.nn.CrossEntropyLoss(reduction='sum')
+    criterion = InfoNCELoss(size_average=False).cuda()
 
     for ids, posts, questions, answers, labels in batch_iter(val_ids, \
                        post_content, qa_dict, vocab, args.batch_size, shuffle=False):

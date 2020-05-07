@@ -1,4 +1,5 @@
 import os
+import pickle
 import sys
 import pickle
 import argparse
@@ -10,6 +11,16 @@ from build_vocab import VocabEntry
 from utils import *
 from pdb import set_trace as bp
 from focal_loss import FocalLoss
+from sentence_transformers import SentenceTransformer
+from info_nce_loss import InfoNCELoss
+
+sentence_bert_model = SentenceTransformer('bert-base-nli-mean-tokens')
+
+valid_validation_iteration = 0
+
+valid_p_embeddings = pickle.load( open( "valid_p_embeddings.pickle", "rb" ) )
+valid_q_embeddings = pickle.load( open( "valid_q_embeddings.pickle", "rb" ) )
+valid_a_embeddings = pickle.load( open( "valid_a_embeddings.pickle", "rb" ) )
 
 def train():
 
@@ -37,14 +48,14 @@ def train():
 
     print("Placing model on ", args.device)
     if args.device == 'cuda':
-       model.cuda()
+       model = model.cuda()
 
     lr = args.lr
     optim = torch.optim.Adam(list(model.parameters()), lr=lr)
 
     # The loss functions
     #criterion = torch.nn.CrossEntropyLoss().to(device=device)
-    criterion = FocalLoss(gamma=5).to(device=device)
+    criterion = InfoNCELoss().to(device=device)
 
     print("Beginning Training")
     model.train()
@@ -53,32 +64,83 @@ def train():
 
     model_counter = 0
     train_iter = 0
+
+    p_embeddings = pickle.load( open( "p_embeddings.pickle", "rb" ) )
+    print("P embeddings loaded", p_embeddings[0].shape)
+
+    q_embeddings = pickle.load( open( "q_embeddings.pickle", "rb" ) )
+    print("Q embeddings loaded", q_embeddings[0].shape)
+
+    a_embeddings = pickle.load( open( "a_embeddings.pickle", "rb" ) )
+    print("A embeddings loaded", a_embeddings[0].shape)
+
+    # favorite_color = pickle.load( open( "a_embeddings.pickle", "rb" ) )
+
     for ep in range(args.max_epochs):
 
         val_iter = 0
 
+        epoch_iter = 0
+
         count = 0
         hello = set()
+
         for ids, posts, questions, answers, labels in batch_iter(train_ids, \
                             post_content, qa_dict, vocab, args.batch_size, shuffle=False):
 
             train_iter += 1
+            #print(train_iter)
 
             optim.zero_grad()
 
-            question_vectors = vocab.id2vector(questions)
-            post_vectors = vocab.id2vector(posts)
-            answer_vectors = vocab.id2vector(answers)
+            #question_vectors = vocab.id2vector(questions)
+            #post_vectors = vocab.id2vector(posts)
+            #answer_vectors = vocab.id2vector(answers)
 
-            padded_posts, post_pad_idx = pad_sequence(args.device, posts)
-            padded_questions, question_pad_idx = pad_sequence(args.device, questions)
-            padded_answers, answer_pad_idx = pad_sequence(args.device, answers)
+            #padded_posts, post_pad_idx = pad_sequence(args.device, posts)
+            #padded_questions, question_pad_idx = pad_sequence(args.device, questions)
+            #padded_answers, answer_pad_idx = pad_sequence(args.device, answers)
 
-            pqa_probs = model(ids, (padded_posts, post_pad_idx),\
-                      (padded_questions, question_pad_idx),\
-                      (padded_answers, answer_pad_idx))
+            #posts = torch.tensor(posts).to(device=args.device)
+            #questions = torch.tensor(questions).to(device=args.device)
+            #answers = torch.tensor(answers).to(device=args.device)
 
+            #if ep == 1:
+            #    with open('p_embeddings.pickle', 'wb') as b:
+            #        pickle.dump(p_embeddings, b)
+            #    with open('q_embeddings.pickle', 'wb') as b:
+            #        pickle.dump(q_embeddings, b)
+            #    with open('a_embeddings.pickle', 'wb') as b:
+            #        pickle.dump(a_embeddings, b)
+
+            #if ep == 0:
+
+            #    posts_embeddings = np.asarray(sentence_bert_model.encode(posts))
+            #    questions_embeddings = np.asarray(sentence_bert_model.encode(questions))
+            #    answers_embeddings = np.asarray(sentence_bert_model.encode(answers))
+
+            #    p_embeddings.append(posts_embeddings)
+            #    q_embeddings.append(questions_embeddings)
+            #    a_embeddings.append(answers_embeddings)
+
+            #    print("Embeddings Cached for Iteration {}".format(epoch_iter))
+
+            #else:
+
+            posts_embeddings = p_embeddings[epoch_iter]
+            questions_embeddings = q_embeddings[epoch_iter]
+            answers_embeddings = a_embeddings[epoch_iter]
+
+            epoch_iter += 1
+
+            posts_embeddings = torch.from_numpy(posts_embeddings).float().to(args.device)
+            questions_embeddings = torch.from_numpy(questions_embeddings).float().to(args.device)
+            answers_embeddings = torch.from_numpy(answers_embeddings).float().to(args.device)
+
+            pqa_probs = model(posts_embeddings, questions_embeddings, answers_embeddings)
             labels = torch.tensor(labels).to(device=args.device)
+
+            #bp()
             total_loss = criterion(pqa_probs, labels)
 
             #bp()
@@ -109,7 +171,7 @@ def train():
 
                 model.eval()
 
-                val_loss = get_val_loss(vocab, args, model)
+                val_loss = get_val_loss(vocab, args, model, ep)
                 model.train()
 
                 print('validation: iter %d, loss %f' % (train_iter, val_loss), file=sys.stderr)
@@ -158,7 +220,7 @@ def train():
     print("Training Finished", file=sys.stderr) 
 
 
-def get_val_loss(vocab, args, model):
+def get_val_loss(vocab, args, model, ep):
 
     total_loss = 0
     total_util_loss = 0
@@ -169,25 +231,65 @@ def get_val_loss(vocab, args, model):
 
     model.eval()
 
-    criterion = torch.nn.CrossEntropyLoss(reduction='sum')
+    #criterion = torch.nn.CrossEntropyLoss(reduction='sum')
+    criterion = InfoNCELoss().to(device='cuda')
+    valid_epoch_iter = 0
 
     for ids, posts, questions, answers, labels in batch_iter(val_ids, \
                        post_content, qa_dict, vocab, args.batch_size, shuffle=False):
 
-       
+        print("Validation Iteration {}".format(valid_epoch_iter))
+
         util_examples += len(ids)
 
-        question_vectors = vocab.id2vector(questions)
-        post_vectors = vocab.id2vector(posts)
-        answer_vectors = vocab.id2vector(answers)
+        #question_vectors = vocab.id2vector(questions)
+        #post_vectors = vocab.id2vector(posts)
+        #answer_vectors = vocab.id2vector(answers)
 
-        padded_posts, post_pad_idx = pad_sequence(args.device, posts)
-        padded_questions, question_pad_idx = pad_sequence(args.device, questions)
-        padded_answers, answer_pad_idx = pad_sequence(args.device, answers)
+        #padded_posts, post_pad_idx = pad_sequence(args.device, posts)
+        #padded_questions, question_pad_idx = pad_sequence(args.device, questions)
+        #padded_answers, answer_pad_idx = pad_sequence(args.device, answers)
 
-        pqa_probs = model(ids, (padded_posts, post_pad_idx),\
-                  (padded_questions, question_pad_idx),\
-                  (padded_answers, answer_pad_idx))
+        #if ep == 1:
+
+        #    with open('valid_p_embeddings.pickle', 'wb') as b:
+        #        pickle.dump(valid_p_embeddings, b)
+        #    with open('valid_q_embeddings.pickle', 'wb') as b:
+        #        pickle.dump(valid_q_embeddings, b)
+        #    with open('valid_a_embeddings.pickle', 'wb') as b:
+        #        pickle.dump(valid_a_embeddings, b)
+
+        #if ep == 0:
+
+        #    posts_embeddings = np.asarray(sentence_bert_model.encode(posts))
+        #    questions_embeddings = np.asarray(sentence_bert_model.encode(questions))
+        #    answers_embeddings = np.asarray(sentence_bert_model.encode(answers))
+
+        #    valid_p_embeddings.append(posts_embeddings)
+        #    valid_q_embeddings.append(questions_embeddings)
+        #    valid_a_embeddings.append(answers_embeddings)
+
+        #    print("Embeddings Cached for Validation Iteration {}".format(valid_epoch_iter))
+
+        #else:
+
+        posts_embeddings = valid_p_embeddings[valid_epoch_iter]
+        questions_embeddings = valid_q_embeddings[valid_epoch_iter]
+        answers_embeddings = valid_a_embeddings[valid_epoch_iter]
+
+        valid_epoch_iter += 1
+
+        #posts_embeddings = np.asarray(sentence_bert_model.encode(posts))
+        #questions_embeddings = np.asarray(sentence_bert_model.encode(questions))
+        #answers_embeddings = np.asarray(sentence_bert_model.encode(answers))
+
+        posts_embeddings = torch.from_numpy(posts_embeddings).float().to(args.device)
+        questions_embeddings = torch.from_numpy(questions_embeddings).float().to(args.device)
+        answers_embeddings = torch.from_numpy(answers_embeddings).float().to(args.device)
+
+        pqa_probs = model(posts_embeddings, questions_embeddings, answers_embeddings)
+
+        #pqa_probs = model(ids, posts, questions, answers)
 
         labels = torch.tensor(labels).to(device=args.device)
         util_loss = criterion(pqa_probs, labels)
@@ -226,18 +328,18 @@ if __name__ == '__main__':
     parser.add_argument('--lstm_hidden_size', type=int, default=200)
     parser.add_argument('--feedforward_hidden', type=int, default=200)
     parser.add_argument('--bidirectional', type=int, default=0)
-    parser.add_argument('--linear_layers', type=int, default=10)
+    parser.add_argument('--linear_layers', type=int, default=1) # 10
     parser.add_argument('--batch_size', type=int, default=1000)
-    parser.add_argument('--max_epochs', type=int, default=30)
-    parser.add_argument('--valid_iter', type=int, default=2500)
+    parser.add_argument('--max_epochs', type=int, default=100) # was 50
+    parser.add_argument('--valid_iter', type=int, default=1200)
     parser.add_argument('--log_every', type=int, default=100)
-    parser.add_argument("--lr", type=float, default=0.001)
-    parser.add_argument("--lr_decay", type=float, default=0.25)
+    parser.add_argument("--lr", type=float, default=0.01) # was 0.01 for best results
+    parser.add_argument("--lr_decay", type=float, default=0.5) # 0.25
     parser.add_argument("--clip_grad", type=float, default=5.0)
     parser.add_argument("--patience", type=int, default=5)
     parser.add_argument("--max_num_trials", type=int, default=5)
     parser.add_argument("--device", type=str, default="cuda")
-    parser.add_argument("--dropout", type=float, default=0.2)
+    parser.add_argument("--dropout", type=float, default=0.4)
     parser.add_argument("--loss_parameter", type=float, default=0.2)
     parser.add_argument("--only_last", type=int, default=0)
 
