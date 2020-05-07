@@ -1,5 +1,6 @@
-### Assignment 3: State-of-the-art Reimplementation
-Implementation of the paper [Learning to Ask Good Questions: Ranking Clarification Questions using Neural Expected Value of Perfect Information](https://arxiv.org/pdf/1805.04655.pdf) in Pytorch
+### Project Report: Ranking of Clarification Questions
+
+Implementation of the project [Ranking of Clarification Questions]() in Pytorch
 
 Checkpoint 2 will involve reproducing the evaluation numbers of a state-of-the-art baseline model for the task of interest with code that you have implemented from scratch. In other words, you must get the same numbers as the previous paper on the same dataset.
 
@@ -22,5 +23,4 @@ In your report, also perform an analysis of what remaining errors this model mak
 
 3. Create a directory to store models: ```mkdir trained_models```
 
-3. For Each Model Directory, Run Train & Test: ``` bash run.sh experiment_name```
-
+4. For Each Model Directory, Run Train & Test: ``` bash run.sh experiment_name```
